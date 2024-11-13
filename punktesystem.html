@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Namens- und Punktverwaltung</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        #content {
+            margin-top: 20px;
+        }
+        #password-section {
+            display: block;
+        }
+        #main-section {
+            display: none;
+        }
+        button {
+            margin-top: 10px;
+        }
+        input[type="text"] {
+            padding: 8px;
+            margin-top: 10px;
+            width: 100%;
+            max-width: 300px;
+        }
+        #output {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        #messages {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Namens- und Punktverwaltung</h1>
+
+    <!-- Passwort-Eingabebereich -->
+    <div id="password-section">
+        <label for="password">Bitte gib dein Passwort ein:</label><br>
+        <input type="text" id="password" placeholder="Passwort eingeben">
+        <button onclick="checkPassword()">Einloggen</button>
+    </div>
+
+    <!-- Hauptbereich nach erfolgreichem Login -->
+    <div id="main-section">
+        <h2>Willkommen, <span id="userName"></span></h2>
+        
+        <label for="action">Welche Funktion möchtest du ausführen?</label><br>
+        <select id="action">
+            <option value="Punkte vergeben">Punkte vergeben</option>
+            <option value="Punkte einer Person anzeigen">Punkte einer Person anzeigen</option>
+            <option value="Punkte löschen">Punkte löschen</option>
+            <option value="Nachricht senden">Nachricht senden</option>
+        </select><br>
+        
+        <div id="action-details"></div>
+        <button onclick="executeAction()">Ausführen</button>
+        <div id="output"></div>
+        <div id="messages"></div> <!-- Bereich für Nachrichten -->
+    </div>
+
+    <script>
+        let currentUser = null; // Der aktuell eingeloggte Benutzer
+        let usersData = {}; // Speichert alle Benutzerdaten (Punkte, Nachrichten, Gründe)
+        const users = {
+            "Erik": "(: :)",
+            "Yara": "Eland",
+            "Selena": "Love6",
+            "Carl": "1“ze%",
+            "Fiete": "XY@XY",
+            "Alaadin": "Id45“",
+            "Bruno": "4'g3?",
+            "Ben": "5%al%",
+            "Greti": "#+1fA",
+            "Hannes": "$h3#+",
+            "Jacob": "@6hc“",
+            "Julian": "!g6+#",
+            "Lars": "1ht€3",
+            "Lotta": "g5%FD",
+            "Maxi": "fg564",
+            "Nele": "%&UHD"
+        };
+
+        // Prüfen des Passworts
+        function checkPassword() {
+            const password = document.getElementById("password").value;
+            // Prüfen, ob das Passwort einem Benutzer zugeordnet ist
+            const username = Object.keys(users).find(user => users[user] === password);
+
+            if (username) {
+                currentUser = username;
+                document.getElementById("userName").textContent = currentUser;
+                document.getElementById("password-section").style.display = "none";
+                document.getElementById("main-section").style.display = "block";
+                loadUserData(); // Lade Benutzerdaten
+            } else {
+                alert("Falsches Passwort oder Benutzername!");
+            }
+        }
+
+        // Lade Benutzerdaten aus dem localStorage
+        function loadUserData() {
+            if (localStorage.getItem('usersData')) {
+                usersData = JSON.parse(localStorage.getItem('usersData'));
+            }
+            if (!usersData[currentUser]) {
+                usersData[currentUser] = { points: 0, messages: [] }; // Initialisiere Daten für neuen Benutzer
+            }
+            updatePointsDisplay();
+        }
+
+        // Speichere Benutzerdaten in localStorage
+        function saveUserData() {
+            localStorage.setItem('usersData', JSON.stringify(usersData));
+        }
+
+        // Funktion zum Ausführen der gewählten Aktion
+        function executeAction() {
+            const action = document.getElementById("action").value;
+            const output = document.getElementById("output");
+            let actionDetails = document.getElementById("action-details");
+            output.textContent = ''; // Vorherige Ausgaben löschen
+
+            if (action === "Punkte vergeben") {
+                actionDetails.innerHTML = `
+                    <label for="name">An welche Person möchtest du Punkte vergeben?</label><br>
+                    <input type="text" id="name" placeholder="Name eingeben"><br>
+                    <label for="reason">Grund (z.B. warum die Person Punkte bekommt):</label><br>
+                    <input type="text" id="reason" placeholder="Grund eingeben"><br>
+                    <button onclick="givePoints()">Punkte vergeben</button>
+                `;
+            } else if (action === "Punkte einer Person anzeigen") {
+                actionDetails.innerHTML = `
+                    <label for="person">Name der Person</label><br>
+                    <input type="text" id="person" placeholder="Name eingeben"><br>
+                    <button onclick="showPoints()">Punkte anzeigen</button>
+                `;
+            } else if (action === "Punkte löschen") {
+                actionDetails.innerHTML = `
+                    <label for="deletePassword">Gib das Passwort ein, um die Punkte zu löschen</label><br>
+                    <input type="text" id="deletePassword" placeholder="Passwort eingeben"><br>
+                    <label for="deletePerson">Name der Person, deren Punkte gelöscht werden:</label><br>
+                    <input type="text" id="deletePerson" placeholder="Name eingeben"><br>
+                    <button onclick="deletePoints()">Punkte löschen</button>
+                `;
+            } else if (action === "Nachricht senden") {
+                actionDetails.innerHTML = `
+                    <label for="recipient">Empfänger (Name):</label><br>
+                    <input type="text" id="recipient" placeholder="Name eingeben"><br>
+                    <label for="message">Nachricht:</label><br>
+                    <input type="text" id="message" placeholder="Nachricht eingeben"><br>
+                    <button onclick="sendMessage()">Nachricht senden</button>
+                `;
+            }
+        }
+
+        // Funktion für das Vergeben von Punkten
+        function givePoints() {
+            const name = document.getElementById("name").value.trim();
+            const reason = document.getElementById("reason").value.trim();
+
+            if (name && reason && name !== currentUser) {
+                // Überprüfen, ob die Person ein Passwort hat (also in der users-Liste)
+                if (users[name]) {
+                    if (!usersData[name]) {
+                        usersData[name] = { points: 0 }; // Falls die Person noch keine Punkte hat
+                    }
+                    usersData[name].points++;
+                    alert(`${name} hat jetzt ${usersData[name].points} Punkte. Grund: ${reason}`);
+                    saveUserData(); // Speichern der Daten
+                } else {
+                    alert("Diese Person hat kein Passwort und kann daher keine Punkte erhalten.");
+                }
+            } else {
+                alert("Bitte gib einen gültigen Namen und einen Grund ein.");
+            }
+        }
+
+        // Funktion zum Anzeigen der Punkte einer Person
+        function showPoints() {
+            const name = document.getElementById("person").value.trim();
+            const output = document.getElementById("output");
+            if (name && usersData[name]) {
+                output.textContent = `${name} hat ${usersData[name].points} Punkte.`;
+            } else {
+                output.textContent = `Keine Punkte für ${name} gefunden.`;
+            }
+        }
+
+        // Funktion zum Löschen der Punkte einer Person (nur mit Passwort "Hallo1.0")
+        function deletePoints() {
+            const deletePassword = document.getElementById("deletePassword").value.trim();
+            const deletePerson = document.getElementById("deletePerson").value.trim();
+            
+            if (deletePassword === "Hallo1.0") {
+                if (deletePerson && usersData[deletePerson]) {
+                    usersData[deletePerson].points = 0; // Punkte löschen
+                    alert(`${deletePerson}'s Punkte wurden auf 0 gesetzt.`);
+                    saveUserData(); // Speichern der Daten
+                } else {
+                    alert(`Keine Daten für ${deletePerson} gefunden.`);
+                }
+            } else {
+                alert("Falsches Passwort!");
+            }
+        }
+
+        // Funktion zum Senden von Nachrichten (mit Beleidigungen-Prüfung)
+        function sendMessage() {
+            const recipient = document.getElementById("recipient").value.trim();
+            const message = document.getElementById("message").value.trim();
+            const offensiveWords = ["Arschloch", "Idiot"]; // Liste von Beleidigungen
+            let containsOffensiveWord = offensiveWords.some(word => message.includes(word));
+
+            if (recipient && message) {
+                // Beleidigung erkannt
+                if (containsOffensiveWord) {
+                    if (!usersData[currentUser].points) usersData[currentUser].points = 0;
+                    usersData[currentUser].points--; // Punkt abziehen
+                    alert("Beleidigung erkannt! Du hast einen Punkt verloren.");
+                    saveUserData(); // Speichern der Daten
+                    return; // Nachricht wird nicht gesendet
+                }
+
+                // Nachricht hinzufügen
+                if (!usersData[recipient]) {
+                    usersData[recipient] = { messages: [] }; // Falls der Empfänger noch keine Nachrichten hat
+                }
+                if (!usersData[recipient].messages) {
+                    usersData[recipient].messages = [];
+                }
+                usersData[recipient].messages.push(`Nachricht von ${currentUser}: ${message}`);
+                alert("Nachricht wurde gesendet!");
+                saveUserData(); // Speichern der Daten
+            } else {
+                alert("Bitte gib einen Empfänger und eine Nachricht ein.");
+            }
+        }
+    </script>
+
+</body>
+</html>
